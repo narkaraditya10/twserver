@@ -1,9 +1,24 @@
+const axios = require("axios");
+
+// Google Apps Script URL
+const googleScriptURL =
+  "https://script.google.com/macros/s/AKfycbzISl3b6YZ1D-fjzzixhQH-aRbwoCy4rn3btpSRGZDUchZWoKBv5tds-w8FUsaOL9I3/exec";
+
 module.exports = async (req, res) => {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.status(200).end();
+    return;
+  }
+
+  if (req.method === "GET") {
+    // Return a basic message or status for GET requests
+    res.status(200).json({
+      message:
+        "This is a proxy server for Google Apps Script. Use POST to send data.",
+    });
     return;
   }
 
@@ -23,20 +38,6 @@ module.exports = async (req, res) => {
       console.error("Error forwarding request:", error);
       res.status(500).json({ error: "Failed to forward request" });
     }
-  } else if (req.method === "GET") {
-    // Provide a user-friendly message for GET requests
-    res.status(200).send(`
-      <h1>Proxy Server</h1>
-      <p>This server only accepts <strong>POST</strong> requests. To use this proxy:</p>
-      <pre>
-      POST https://your-proxy.vercel.app
-      Content-Type: application/json
-
-      {
-        "key": "value"
-      }
-      </pre>
-    `);
   } else {
     res.status(405).json({ error: "Method Not Allowed" });
   }
