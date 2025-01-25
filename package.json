@@ -1,14 +1,8 @@
 {
-  "name": "proxy-server",
+  "name": "vercel-proxy",
   "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "vercel dev"
-  },
+  "main": "api/proxy.js",
   "dependencies": {
     "axios": "^1.7.9"
-  },
-  "engines": {
-    "node": "16.x"
   }
 }
