@@ -1,44 +1,40 @@
+const express = require("express");
 const axios = require("axios");
+const app = express();
+const port = process.env.PORT || 3000;
 
 // Google Apps Script URL
 const googleScriptURL =
-  "https://script.google.com/macros/s/AKfycbzISl3b6YZ1D-fjzzixhQH-aRbwoCy4rn3btpSRGZDUchZWoKBv5tds-w8FUsaOL9I3/exec";
+  "https://script.google.com/macros/s/AKfycbzISl3b6YZ1D-fjzzixhQH-aRbwoCy4rn3btpSRGZDUchZWoKBv5tds-w8FUsaOL9I3/exec"; // Replace with your script URL
 
-module.exports = async (req, res) => {
+// Middleware to parse JSON
+app.use(express.json());
+
+// Allow CORS
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
+  next();
+});
 
-  if (req.method === "GET") {
-    // Return a basic message or status for GET requests
-    res.status(200).json({
-      message:
-        "This is a proxy server for Google Apps Script. Use POST to send data.",
+// Proxy endpoint
+app.post("/", async (req, res) => {
+  try {
+    const response = await axios.post(googleScriptURL, req.body, {
+      headers: { "Content-Type": "application/json" },
     });
-    return;
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
+});
 
-  if (req.method === "POST") {
-    try {
-      // Forward the data to Google Apps Script
-      const response = await axios.post(googleScriptURL, req.body, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Return the response from Google Apps Script
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.status(200).json(response.data);
-    } catch (error) {
-      console.error("Error forwarding request:", error);
-      res.status(500).json({ error: "Failed to forward request" });
-    }
-  } else {
-    res.status(405).json({ error: "Method Not Allowed" });
-  }
-};
+// Start the server
+app.listen(port, () => {
+  console.log(`Proxy server running at http://localhost:${port}`);
+});
