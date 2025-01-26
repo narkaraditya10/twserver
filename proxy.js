@@ -9,30 +9,55 @@ const googleScriptURL =
 
 app.use(express.json()); // Parse JSON requests
 
+// Debug: Log incoming requests
+app.use((req, res, next) => {
+  console.log("Request received:", req.method, req.url);
+  console.log("Request headers:", req.headers);
+  console.log("Request body:", req.body);
+  next();
+});
+
 // Proxy route
 app.post("/proxy", async (req, res) => {
   try {
-    console.log("Received request body:", req.body);
+    console.log("Forwarding data to Google Apps Script...");
+    console.log("Payload:", req.body);
 
-    // Forward the data to Google Apps Script
+    // Forward the request to Google Apps Script
     const response = await axios.post(googleScriptURL, req.body, {
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-    console.log("Response from Google Script:", response.data);
+    console.log("Response from Google Apps Script:", response.data);
 
+    // Handle successful response
     if (response.status === 200) {
       const redirectURL = req.body.redirectURL || "https://example.com";
-      res.redirect(302, redirectURL); // Send a 302 redirect response
+      console.log("Redirecting to:", redirectURL);
+      res.redirect(302, redirectURL);
     } else {
-      res.status(500).json({ error: "Failed to store data in Google Sheets." });
+      console.error(
+        "Google Apps Script Error:",
+        response.status,
+        response.data
+      );
+      res.status(500).json({ error: "Google Apps Script failed." });
     }
   } catch (error) {
-    console.error("Error forwarding request to Google Apps Script:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error during request:", error.message);
+    console.error("Error details:", error.response?.data || error.stack);
+    res.status(500).json({ error: "Internal Server Error: " + error.message });
   }
+});
+
+// Add CORS headers
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  next();
 });
 
 // Start the server
